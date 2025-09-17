@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { TextField } from '../TextField';
 
-type Movie = {
+type MovieForm = {
   title: string;
   description: string;
   imgUrl: string;
@@ -9,91 +9,77 @@ type Movie = {
   imdbId: string;
 };
 
-type Props = {
-  onAdd: (movie: Movie) => void;
+const initialForm: MovieForm = {
+  title: '',
+  description: '',
+  imgUrl: '',
+  imdbUrl: '',
+  imdbId: '',
 };
 
-export const NewMovie: React.FC<Props> = ({ onAdd }) => {
+type NewMovieProps = {
+  onAdd: (movie: MovieForm) => void;
+};
+
+export const NewMovie = ({ onAdd }: NewMovieProps) => {
+  const [form, setForm] = useState<MovieForm>(initialForm);
   const [count, setCount] = useState(0);
+  const handleChange = (field: keyof MovieForm, value: string) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+  };
 
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [imgUrl, setImgUrl] = useState('');
-  const [imdbUrl, setImdbUrl] = useState('');
-  const [imdbId, setImdbId] = useState('');
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const requiredKeys: (keyof MovieForm)[] = [
+      'title',
+      'imgUrl',
+      'imdbUrl',
+      'imdbId',
+    ];
+    const allFilled = requiredKeys.every(key => form[key].trim() !== '');
 
-  const isValid =
-    title.trim() && imgUrl.trim() && imdbUrl.trim() && imdbId.trim();
-
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!isValid) {
+    if (!allFilled) {
       return;
     }
 
-    // Вызвать onAdd с собранным объектом
-    onAdd({
-      title: title.trim(),
-      description: description.trim(),
-      imgUrl: imgUrl.trim(),
-      imdbUrl: imdbUrl.trim(),
-      imdbId: imdbId.trim(),
-    });
-
-    // Очистить поля
-    setTitle('');
-    setDescription('');
-    setImgUrl('');
-    setImdbUrl('');
-    setImdbId('');
-
-    // Сбросить touched в TextField
+    onAdd(form);
+    setForm(initialForm);
     setCount(prev => prev + 1);
   };
+
+  const fields: {
+    name: keyof MovieForm;
+    label?: string;
+    required?: boolean;
+  }[] = [
+    { name: 'title', required: true, label: 'Title' },
+    { name: 'description', label: 'Description' },
+    { name: 'imgUrl', required: true, label: 'Image URL' },
+    { name: 'imdbUrl', required: true, label: 'IMDB URL' },
+    { name: 'imdbId', required: true, label: 'IMDB ID' },
+  ];
+
+  const requiredKeys: (keyof MovieForm)[] = [
+    'title',
+    'imgUrl',
+    'imdbUrl',
+    'imdbId',
+  ];
 
   return (
     <form className="NewMovie" key={count} onSubmit={handleSubmit}>
       <h2 className="title">Add a movie</h2>
 
-      <TextField
-        name="title"
-        label="Title"
-        value={title}
-        onChange={setTitle}
-        required
-      />
-
-      <TextField
-        name="description"
-        label="Description"
-        value={description}
-        onChange={setDescription}
-      />
-
-      <TextField
-        name="imgUrl"
-        label="Image URL"
-        value={imgUrl}
-        onChange={setImgUrl}
-        required
-      />
-
-      <TextField
-        name="imdbUrl"
-        label="Imdb URL"
-        value={imdbUrl}
-        onChange={setImdbUrl}
-        required
-      />
-
-      <TextField
-        name="imdbId"
-        label="Imdb ID"
-        value={imdbId}
-        onChange={setImdbId}
-        required
-      />
+      {fields.map(({ name, label, required }) => (
+        <TextField
+          key={name}
+          name={name}
+          label={label}
+          value={form[name]}
+          required={required}
+          onChange={value => handleChange(name, value)}
+        />
+      ))}
 
       <div className="field is-grouped">
         <div className="control">
@@ -101,7 +87,7 @@ export const NewMovie: React.FC<Props> = ({ onAdd }) => {
             type="submit"
             data-cy="submit-button"
             className="button is-link"
-            disabled={!isValid}
+            disabled={!requiredKeys.every(k => form[k].trim() !== '')}
           >
             Add
           </button>
