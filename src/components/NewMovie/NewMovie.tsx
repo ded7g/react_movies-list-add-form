@@ -23,28 +23,32 @@ type NewMovieProps = {
 
 export const NewMovie = ({ onAdd }: NewMovieProps) => {
   const [form, setForm] = useState<MovieForm>(initialForm);
-  const [count, setCount] = useState(0);
+  const [formVersion, setFormVersion] = useState(0); // используется для сброса TextField
+
+  const requiredKeys: (keyof MovieForm)[] = [
+    'title',
+    'imgUrl',
+    'imdbUrl',
+    'imdbId',
+  ];
+
+  const isFormValid = () =>
+    requiredKeys.every(requiredKey => form[requiredKey].trim() !== '');
+
   const handleChange = (field: keyof MovieForm, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const requiredKeys: (keyof MovieForm)[] = [
-      'title',
-      'imgUrl',
-      'imdbUrl',
-      'imdbId',
-    ];
-    const allFilled = requiredKeys.every(key => form[key].trim() !== '');
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
 
-    if (!allFilled) {
+    if (!isFormValid()) {
       return;
     }
 
-    onAdd(form);
+    onAdd({ ...form }); // передаём копию
     setForm(initialForm);
-    setCount(prev => prev + 1);
+    setFormVersion(prev => prev + 1);
   };
 
   const fields: {
@@ -59,15 +63,8 @@ export const NewMovie = ({ onAdd }: NewMovieProps) => {
     { name: 'imdbId', required: true, label: 'IMDB ID' },
   ];
 
-  const requiredKeys: (keyof MovieForm)[] = [
-    'title',
-    'imgUrl',
-    'imdbUrl',
-    'imdbId',
-  ];
-
   return (
-    <form className="NewMovie" key={count} onSubmit={handleSubmit}>
+    <form className="NewMovie" key={formVersion} onSubmit={handleSubmit}>
       <h2 className="title">Add a movie</h2>
 
       {fields.map(({ name, label, required }) => (
@@ -87,7 +84,7 @@ export const NewMovie = ({ onAdd }: NewMovieProps) => {
             type="submit"
             data-cy="submit-button"
             className="button is-link"
-            disabled={!requiredKeys.every(k => form[k].trim() !== '')}
+            disabled={!isFormValid()}
           >
             Add
           </button>
